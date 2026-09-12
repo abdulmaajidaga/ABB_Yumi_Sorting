@@ -1,0 +1,42 @@
+MODULE EGMTest
+    VAR egmident egm_id;
+    VAR egmstate egm_state;
+    CONST egm_minmax egm_minmax_joint := [-2, 2];
+
+    PROC main()
+        EGM_JOINT_TEST;
+    ENDPROC
+
+    PROC EGM_JOINT_TEST()
+        WHILE TRUE DO
+            EGMGetId egm_id;
+            egm_state := EGMGetState(egm_id);
+
+            IF egm_state <= EGM_STATE_CONNECTED THEN
+                EGMSetupUC ROB_R, egm_id, "default", "UCDevice", \Joint;
+            ENDIF
+
+            EGMActJoint egm_id\Tool:=tool0,
+                        \J1:=egm_minmax_joint,
+                        \J2:=egm_minmax_joint,
+                        \J3:=egm_minmax_joint,
+                        \J4:=egm_minmax_joint,
+                        \J5:=egm_minmax_joint,
+                        \J6:=egm_minmax_joint,
+                        \LpFilter:=16,
+                        \MaxSpeedDeviation:=10;
+
+            EGMRunJoint egm_id, EGM_STOP_HOLD \J1 \J2 \J3 \J4 \J5 \J6 \CondTime:=60 \RampInTime:=1;
+
+            IF egm_state <= EGM_STATE_CONNECTED THEN
+                EGMReset egm_id;
+            ENDIF
+        ENDWHILE
+
+        ERROR
+        IF ERRNO = ERR_UDPUC_COMM THEN
+            TPWrite "EGM: no external device detected on UdpUc 'PC' yet.";
+            TRYNEXT;
+        ENDIF
+    ENDPROC
+ENDMODULE

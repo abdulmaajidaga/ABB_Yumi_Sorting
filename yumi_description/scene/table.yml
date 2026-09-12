@@ -1,0 +1,31 @@
+## Table the YuMi is mounted on, as a curobo world/scene obstacle.
+##
+## Frame: this robot's base_link is "world" (see yumi.yml), and world z=0 is the
+## torso mesh's true bottom face (coarse/body.stl bottom = -0.10 local to
+## yumi_base_link, which sits at world z=+0.1 -- the two cancel exactly, so
+## world z=0 is where the robot physically contacts the table).
+##
+## Original single-slab table: bottom at world z=0.013, top at z=0.10 (8.7cm
+## thick, per user's visual confirmation against the real setup); back edge
+## at the torso's true back face (local x=-0.361), 90cm forward, 120cm wide,
+## centered on the robot.
+##
+## That slab overlapped yumi_body's own (fixed, never-moving) collision
+## spheres by up to 8.0cm -- the robot's base genuinely sits in/near that
+## footprint, it isn't a false positive. Rather than shrink the table's
+## thickness (which would leave almost nothing), the tabletop is split into
+## 3 cuboids that tile the full 90x120cm footprint minus a cutout around the
+## base (base footprint from every overlapping sphere's center+radius, plus a
+## 1cm margin). The cutout touches the table's back edge, so there's no
+## fourth "back" strip. The arms are still fully bounded by the tabletop on
+## all sides they can reach from.
+cuboid:
+  table_front:
+    dims: [0.3954, 1.2, 0.087]
+    pose: [0.3413, 0.0, 0.0565, 1, 0, 0, 0.0]
+  table_side_neg_y:
+    dims: [0.5046, 0.3634, 0.087]
+    pose: [-0.1087, -0.4183, 0.0565, 1, 0, 0, 0.0]
+  table_side_pos_y:
+    dims: [0.5046, 0.3728, 0.087]
+    pose: [-0.1087, 0.4136, 0.0565, 1, 0, 0, 0.0]

@@ -1,0 +1,7 @@
+# Forward kinematics for the full 16-DOF YuMi cspace (both arms + grippers).
+sensor_msgs/JointState joint_state
+---
+bool success
+string message
+string[] tool_frames
+geometry_msgs/Pose[] poses

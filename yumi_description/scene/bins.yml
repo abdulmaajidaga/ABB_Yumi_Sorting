@@ -1,0 +1,36 @@
+## Six sorting bins for the pick-and-sort demo, as curobo world/scene
+## obstacles (same cuboid format as table.yml -- merged with it at runtime).
+##
+## Placed on the table's two side "wings" (table_side_neg_y / table_side_pos_y
+## in table.yml, x in [-0.361, 0.1436]) -- table area that's otherwise unused,
+## entirely clear of the central object-scatter region (x in [0.18, 0.50]).
+## 3 bins per side, spaced 12cm apart along y with margin from both the
+## wing's own edges and each other (bins are 8x8cm): right wing (y<0) holds
+## the three round shapes (sphere/cylinder/cone -- same grouping
+## grasp_generator.py already uses for its round-vs-box grasp strategy),
+## left wing (y>0) holds the three box shapes (cube/cuboid/prism). An arm
+## can only physically reach bins on its own side, so an object whose bin is
+## on the OTHER side needs a handoff -- see HANDOFF_POINT in
+## publish_perception_scene.py.
+##
+## Bin height: 5cm tall, bottom on the table (world z=0.10), so top rim is
+## at z=0.15 -- top_down_tcp_pose() release points hover above that.
+cuboid:
+  bin_sphere:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, -0.30, 0.125, 1, 0, 0, 0.0]
+  bin_cylinder:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, -0.42, 0.125, 1, 0, 0, 0.0]
+  bin_cone:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, -0.54, 0.125, 1, 0, 0, 0.0]
+  bin_cube:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, 0.30, 0.125, 1, 0, 0, 0.0]
+  bin_cuboid:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, 0.42, 0.125, 1, 0, 0, 0.0]
+  bin_prism:
+    dims: [0.08, 0.08, 0.05]
+    pose: [-0.05, 0.54, 0.125, 1, 0, 0, 0.0]

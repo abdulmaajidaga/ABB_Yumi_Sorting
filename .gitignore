@@ -1,0 +1,37 @@
+# Claude Code session data
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# Vendored external repos -- each is its own git checkout with its own
+# history (curobo/.git, perception/Grounded-SAM-2/.git,
+# perception/pyRANSAC-3D/.git) and multi-GB of venvs/model weights.
+# Treated as external dependencies to clone separately, not part of this
+# repo's own history (see CLAUDE.md).
+/curobo/
+/perception/Grounded-SAM-2/
+/perception/pyRANSAC-3D/
+
+# ROS2 colcon build artifacts -- regenerate with colcon build
+/ros2_ws/build/
+/ros2_ws/install/
+/ros2_ws/log/
+/ros2_overlay/
+
+# Generated at runtime by the perception/curobo/physics pipeline -- not
+# source, regenerated every run
+/yumi_description/scene/last_perception_scene.json
+/yumi_description/scene/last_grasp_trajectory.json
+/yumi_description/scene/last_full_sequence.json
+/physics/yumi_flat.urdf
+/physics/assets/
+/perception/outputs/
+
+# Misc
+.DS_Store
+/tmp/

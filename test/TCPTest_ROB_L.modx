@@ -1,0 +1,115 @@
+MODULE TCPTestL
+    CONST string ROBOT_IP := "192.168.125.1";
+    CONST num LISTEN_PORT := 6513;
+    CONST num MAX_NUDGE_DEG := 3;
+
+    VAR socketdev server_socket;
+    VAR socketdev client_socket;
+    VAR string recv_str;
+    VAR jointtarget current_jt;
+
+    PROC main()
+        TPWrite "TCP test L: waiting for PC to connect on " + ROBOT_IP + ":" + ValToStr(LISTEN_PORT);
+        SocketCreate server_socket;
+        SocketBind server_socket, ROBOT_IP, LISTEN_PORT;
+        SocketListen server_socket;
+        SocketAccept server_socket, client_socket;
+        TPWrite "TCP test L: PC connected.";
+
+        current_jt := CJointT();
+        SocketSend client_socket \Str:=JointsToStr(current_jt);
+        TPWrite "TCP test L: sent current joints, waiting for command.";
+
+        SocketReceive client_socket \Str:=recv_str;
+        TPWrite "TCP test L: received: " + recv_str;
+
+        IF recv_str = "STOP" THEN
+            TPWrite "TCP test L: STOP received, closing (no motion).";
+        ELSE
+            HandleNudge recv_str;
+        ENDIF
+
+        SocketClose client_socket;
+        SocketClose server_socket;
+        TPWrite "TCP test L: done.";
+    ENDPROC
+
+    PROC HandleNudge(string cmd)
+        VAR num joint_idx;
+        VAR num deg;
+        VAR jointtarget target_jt;
+        VAR num clamped_deg;
+        VAR string parts;
+
+        IF StrPart(cmd, 1, 5) <> "NUDGE" THEN
+            TPWrite "TCP test L: unrecognized command, ignoring.";
+            RETURN;
+        ENDIF
+
+        joint_idx := StrToVal_Field(cmd, 2);
+        deg := StrToVal_Field(cmd, 3);
+
+        clamped_deg := deg;
+        IF clamped_deg > MAX_NUDGE_DEG THEN
+            clamped_deg := MAX_NUDGE_DEG;
+        ENDIF
+        IF clamped_deg < -MAX_NUDGE_DEG THEN
+            clamped_deg := -MAX_NUDGE_DEG;
+        ENDIF
+
+        target_jt := current_jt;
+        IF joint_idx = 1 THEN
+            target_jt.robax.rax_1 := target_jt.robax.rax_1 + clamped_deg;
+        ELSEIF joint_idx = 2 THEN
+            target_jt.robax.rax_2 := target_jt.robax.rax_2 + clamped_deg;
+        ELSEIF joint_idx = 3 THEN
+            target_jt.robax.rax_3 := target_jt.robax.rax_3 + clamped_deg;
+        ELSEIF joint_idx = 4 THEN
+            target_jt.robax.rax_4 := target_jt.robax.rax_4 + clamped_deg;
+        ELSEIF joint_idx = 5 THEN
+            target_jt.robax.rax_5 := target_jt.robax.rax_5 + clamped_deg;
+        ELSEIF joint_idx = 6 THEN
+            target_jt.robax.rax_6 := target_jt.robax.rax_6 + clamped_deg;
+        ELSEIF joint_idx = 7 THEN
+            target_jt.extax.eax_a := target_jt.extax.eax_a + clamped_deg;
+        ELSE
+            TPWrite "TCP test L: joint index out of range, ignoring.";
+            RETURN;
+        ENDIF
+
+        TPWrite "TCP test L: moving joint " + ValToStr(joint_idx) + " by " + ValToStr(clamped_deg) + " deg (slow).";
+        MoveAbsJ target_jt, v20, fine, tool0;
+        current_jt := CJointT();
+
+        SocketSend client_socket \Str:="DONE," + JointsToStr(current_jt);
+    ENDPROC
+
+    FUNC string JointsToStr(jointtarget jt)
+        RETURN ValToStr(jt.robax.rax_1) + "," + ValToStr(jt.robax.rax_2) + "," +
+               ValToStr(jt.robax.rax_3) + "," + ValToStr(jt.robax.rax_4) + "," +
+               ValToStr(jt.robax.rax_5) + "," + ValToStr(jt.robax.rax_6) + "," +
+               ValToStr(jt.extax.eax_a);
+    ENDFUNC
+
+    FUNC num StrToVal_Field(string s, num field_num)
+        VAR num result;
+        VAR string rest;
+        VAR num pos;
+        VAR num i;
+        VAR bool ok;
+
+        rest := s;
+        FOR i FROM 2 TO field_num DO
+            pos := StrFind(rest, 1, ",");
+            rest := StrPart(rest, pos + 1, StrLen(rest) - pos);
+        ENDFOR
+
+        pos := StrFind(rest, 1, ",");
+        IF pos <= StrLen(rest) THEN
+            rest := StrPart(rest, 1, pos - 1);
+        ENDIF
+
+        ok := StrToVal(rest, result);
+        RETURN result;
+    ENDFUNC
+ENDMODULE

@@ -1,0 +1,131 @@
+MODULE TrajExecR
+    CONST string ROBOT_IP := "192.168.125.1";
+    CONST num LISTEN_PORT := 6512;
+    CONST num MAX_STEP_DEG := 10;
+
+    VAR socketdev server_socket;
+    VAR socketdev client_socket;
+    VAR string recv_str;
+    VAR jointtarget current_jt;
+    VAR jointtarget target_jt;
+    VAR jointtarget last_target_jt;
+    VAR num abort_axis;
+    VAR num abort_parsed;
+    VAR num abort_current;
+    VAR bool use_fine;
+
+    PROC main()
+        TPWrite "TrajExec R: waiting for PC to connect on " + ROBOT_IP + ":" + ValToStr(LISTEN_PORT);
+        SocketCreate server_socket;
+        SocketBind server_socket, ROBOT_IP, LISTEN_PORT;
+        SocketListen server_socket;
+        SocketAccept server_socket, client_socket;
+        TPWrite "TrajExec R: PC connected.";
+
+        current_jt := CJointT();
+        last_target_jt := current_jt;
+        SocketSend client_socket \Str:=JointsToStr(current_jt);
+        TPWrite "TrajExec R: sent current joints, waiting for trajectory.";
+
+        WHILE TRUE DO
+            SocketReceive client_socket \Str:=recv_str;
+
+            IF recv_str = "END" THEN
+                SocketSend client_socket \Str:="BYE";
+                GOTO Finish;
+            ENDIF
+
+            IF NOT ParseAndCheck(recv_str, target_jt) THEN
+                TPWrite "TrajExec R: waypoint rejected, axis " + ValToStr(abort_axis);
+                SocketSend client_socket \Str:="ABORT," + ValToStr(abort_axis) + "," +
+                                                ValToStr(abort_parsed) + "," + ValToStr(abort_current);
+                GOTO Finish;
+            ENDIF
+
+            last_target_jt := target_jt;
+            use_fine := StrToVal_Field(recv_str, 8) > 0.5;
+            IF use_fine THEN
+                MoveAbsJ target_jt, v50, fine, tool0;
+            ELSE
+                MoveAbsJ target_jt, v50, z10, tool0;
+            ENDIF
+            current_jt := CJointT();
+            SocketSend client_socket \Str:="OK," + JointsToStr(current_jt);
+        ENDWHILE
+
+      Finish:
+        SocketClose client_socket;
+        SocketClose server_socket;
+        TPWrite "TrajExec R: closed.";
+    ENDPROC
+
+    FUNC bool ParseAndCheck(string cmd, INOUT jointtarget out_jt)
+        VAR num vals{7};
+        VAR num cur{7};
+        VAR num i;
+        VAR num d;
+
+        FOR i FROM 1 TO 7 DO
+            vals{i} := StrToVal_Field(cmd, i);
+        ENDFOR
+
+        cur{1} := last_target_jt.robax.rax_1;
+        cur{2} := last_target_jt.robax.rax_2;
+        cur{3} := last_target_jt.robax.rax_3;
+        cur{4} := last_target_jt.robax.rax_4;
+        cur{5} := last_target_jt.robax.rax_5;
+        cur{6} := last_target_jt.robax.rax_6;
+        cur{7} := last_target_jt.extax.eax_a;
+
+        FOR i FROM 1 TO 7 DO
+            d := Abs(vals{i} - cur{i});
+            IF d > MAX_STEP_DEG THEN
+                abort_axis := i;
+                abort_parsed := vals{i};
+                abort_current := cur{i};
+                RETURN FALSE;
+            ENDIF
+        ENDFOR
+
+        out_jt := current_jt;
+        out_jt.robax.rax_1 := vals{1};
+        out_jt.robax.rax_2 := vals{2};
+        out_jt.robax.rax_3 := vals{3};
+        out_jt.robax.rax_4 := vals{4};
+        out_jt.robax.rax_5 := vals{5};
+        out_jt.robax.rax_6 := vals{6};
+        out_jt.extax.eax_a := vals{7};
+        RETURN TRUE;
+    ENDFUNC
+
+    FUNC string JointsToStr(jointtarget jt)
+        RETURN ValToStr(jt.robax.rax_1) + "," + ValToStr(jt.robax.rax_2) + "," +
+               ValToStr(jt.robax.rax_3) + "," + ValToStr(jt.robax.rax_4) + "," +
+               ValToStr(jt.robax.rax_5) + "," + ValToStr(jt.robax.rax_6) + "," +
+               ValToStr(jt.extax.eax_a);
+    ENDFUNC
+
+    FUNC num StrToVal_Field(string s, num field_num)
+        VAR num result;
+        VAR string rest;
+        VAR num pos;
+        VAR num i;
+        VAR bool ok;
+
+        rest := s;
+        IF field_num > 1 THEN
+            FOR i FROM 2 TO field_num DO
+                pos := StrFind(rest, 1, ",");
+                rest := StrPart(rest, pos + 1, StrLen(rest) - pos);
+            ENDFOR
+        ENDIF
+
+        pos := StrFind(rest, 1, ",");
+        IF pos <= StrLen(rest) THEN
+            rest := StrPart(rest, 1, pos - 1);
+        ENDIF
+
+        ok := StrToVal(rest, result);
+        RETURN result;
+    ENDFUNC
+ENDMODULE

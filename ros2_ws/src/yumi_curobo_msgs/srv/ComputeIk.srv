@@ -1,0 +1,18 @@
+# Inverse kinematics for both YuMi grippers simultaneously.
+#
+# tool_frames/poses must each have exactly 2 entries, in the order
+# ["gripper_r_base", "gripper_l_base"]. Set lock_right/lock_left to freeze
+# that arm at its current pose instead of driving it to the given target --
+# the server substitutes the current pose server-side, so the ignored pose in
+# the request can be anything. This never rebuilds/recompiles the planner;
+# it's the same always-both-arms-active model on every call.
+string[] tool_frames
+geometry_msgs/Pose[] poses
+bool lock_right
+bool lock_left
+sensor_msgs/JointState seed_state   # optional; empty name[] = use last known state
+---
+bool success
+string message
+string[] joint_names
+float64[] joint_positions
