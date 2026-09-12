@@ -1,5 +1,6 @@
-# Claude Code session data
+# Claude Code session data / project instructions
 .claude/
+CLAUDE.md
 
 # Python
 __pycache__/
