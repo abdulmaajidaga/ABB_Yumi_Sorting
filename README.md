@@ -6,13 +6,19 @@ collision-aware pick-and-place motions (including cross-arm handoffs when an
 object's bin is on the opposite side from where it landed), and a PyBullet replay
 validates the plan under real gravity/contact/friction physics.
 
-[![YuMi visiting each detected object in Foxglove while curobo plans its motion](yumi_sorting.gif)](yumi_sorting.mp4)
+<p align="center">
+  <a href="yumi_sorting.mp4">
+    <img src="yumi_sorting.gif" alt="YuMi visiting each detected object in Foxglove while curobo plans its motion" width="640">
+  </a>
+</p>
 
-*Curobo-planned motion in Foxglove, with the robot's collision spheres in purple.
-Labels show `true shape -> classified shape`; orange points are what the camera
-captured; magenta arrows and cyan lines are the generated grasps. Objects stay put
-because this view is kinematic-only: real contact is checked in PyBullet.
-[Watch the full-quality video](yumi_sorting.mp4).*
+<p align="center">
+  <em>Curobo-planned motion in Foxglove, with the robot's collision spheres in purple.
+  Labels show <code>true shape -> classified shape</code>; orange points are what the camera
+  captured; magenta arrows and cyan lines are the generated grasps. Objects stay put
+  because this view is kinematic-only: real contact is checked in PyBullet.
+  <a href="yumi_sorting.mp4">Watch the full-quality video</a>.</em>
+</p>
 
 ## How it works
 
